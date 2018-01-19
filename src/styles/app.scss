@@ -1,0 +1,38 @@
+@charset "utf-8";
+
+@import "./settings";
+@import "~foundation-sites/scss/foundation";
+
+$medium: 500;
+$paragraph-font-size: rem-calc(13);
+
+$light-blue: #007dff;
+$medium-blue: #0059ff;
+$dark-blue: rgba(11, 0, 255, 0.80);
+
+$arrow: url("/assets/images/arrow.svg");
+$arrow-hover: url("/assets/images/arrow-hover.svg");
+$arrow-up: url("/assets/images/arrow-up.svg");
+$cross: url("/assets/images/close.svg");
+$cross-hover: url("/assets/images/close-hover.svg");
+$cross-white: url("/assets/images/close-white.svg");
+$calendar: url("/assets/images/calendar.svg");
+$pen: url("/assets/images/edit.svg");
+$pen-hover: url("/assets/images/edit-hover.svg");
+
+$text-button-height: rem-calc(36);
+$text-button-border-radius: rem-calc(4);
+$text-button-padding: 0 rem-calc(16);
+
+$icon-button-size: rem-calc(24);
+$icon-button-background-color: $light-gray;
+
+$blue-button-background-color-normal: $light-blue;
+$blue-button-background-color-hover: $medium-blue;
+$blue-button-background-color-pressed: $dark-blue;
+
+$busy-data-background-color-normal: #d5dfe9;
+$busy-data-background-color-hover: #98a9b9;
+$busy-data-background-color-active: #8594a2;
+
+$form-input-height: rem-calc(38);
