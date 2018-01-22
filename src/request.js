@@ -81,6 +81,12 @@ const request = {
     `, 'users');
   },
 
+  getRecommendation (body) {
+    return axios.get('/recommendation', {
+      params: body
+    }).then((response) => response.data);
+  },
+
   createEvent (title, dateStart, dateEnd, users, room) {
     return GRAPHQL.sendMutation(`
       mutation {

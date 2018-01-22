@@ -5,7 +5,18 @@ const state = {
 };
 
 const getters = {
-  getFloors: state => state.floors
+  getFloors: state => state.floors,
+  getRoomById: state => id => {
+    for (let key in state.floors) {
+      if (state.floors.hasOwnProperty(key)) {
+        for (let i = 0; i < state.floors[key].length; ++i) {
+          if (state.floors[key][i].id === id) {
+            return state.floors[key][i];
+          }
+        }
+      }
+    }
+  }
 };
 
 const mutations = {

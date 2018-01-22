@@ -6,10 +6,10 @@
       <div id="msg-text-container">
         <h4 class="msg-text normal" v-for="msg in text">{{ msg }}</h4>
       </div>
-      <div class="modal-controls-container" v-if="type === 'SUCCESS' || type === 'ERROR'">
+      <div class="modal-controls-container controls-container" v-if="type === 'SUCCESS' || type === 'ERROR'">
         <button class="text-button blue-button" @click="close()">Хорошо</button>
       </div>
-      <div id="modal-controls-container" class="controls-container" v-if="type === 'WARNING'">
+      <div class="modal-controls-container controls-container" v-if="type === 'WARNING'">
         <button class="text-button gray-button" @click="close()">Отмена</button>
         <button class="text-button gray-button" @click="removeEvent()">Удалить</button>
       </div>
@@ -102,8 +102,27 @@
     margin-bottom: 0;
   }
 
-  #modal-controls-container
+  .modal-controls-container
   {
     margin-top: rem-calc(24);
+  }
+
+  @include breakpoint(small only)
+  {
+    #global-overlay
+    {
+      padding-bottom: rem-calc(24);
+      align-items: flex-end;
+    }
+
+    #modal-container
+    {
+      padding: rem-calc(32) rem-calc(16);
+    }
+
+    .modal-controls-container
+    {
+      margin-top: rem-calc(31);
+    }
   }
 </style>

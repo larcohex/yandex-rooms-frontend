@@ -1,8 +1,8 @@
 <template>
   <div>
-    <div class="form-container">
+    <div id="user-input-container" class="form-container">
       <label for="participants" class="form-label">Участники</label>
-      <input type="text" name="topic" id="participants" class="form-input width-100 pointer" placeholder="Например, Тор Одинович" @focus="toggleUserList()" @blur="toggleUserList()" readonly>
+      <input type="text" name="topic" id="participants" class="form-input width-100 pointer" placeholder="Например, Тор Одинович" @focus="toggleUserList()" @blur="toggleUserList()" @mousedown="unblurIfFocused" readonly>
       <div id="user-list-container" v-if="open">
         <div class="user-container width-100 flex-container align-middle pointer" v-for="(user, index) in userList" @mousedown="addUser(index)">
           <div class="avatar-container centered-background" :style="{ 'background-image': 'url(' + user.avatarUrl + ')' }"></div>
@@ -11,9 +11,11 @@
       </div>
     </div>
     <div class="participant-list-container">
-      <div class="participant-container inline-flex-container align-middle" v-for="(user, index) in selectedList">
-        <div class="avatar-container centered-background" :style="{ 'background-image': 'url(' + user.avatarUrl + ')' }"></div>
-        <p class="participant-text inline-block">{{ user.login }}</p>
+      <div class="participant-container medium-inline-flex-container small-only-flex-container align-justify align-middle" v-for="(user, index) in selectedList">
+        <div class="flex-container align-middle">
+          <div class="avatar-container centered-background" :style="{ 'background-image': 'url(' + user.avatarUrl + ')' }"></div>
+          <p class="participant-text inline-block">{{ user.login }}</p>
+        </div>
         <div class="participant-remove close centered-background inline-block" @click="removeUser(index)"></div>
       </div>
     </div>
@@ -38,6 +40,11 @@
         open: false
       };
     },
+    watch: {
+      selectedList (newList) {
+        this.$emit('change', newList);
+      }
+    },
     methods: {
       addUser (index) {
         this.$emit('added', this.userList[index]);
@@ -51,6 +58,12 @@
       },
       toggleUserList () {
         this.open = !this.open;
+      },
+      unblurIfFocused (e) {
+        if (e.target === document.activeElement) {
+          e.preventDefault();
+          e.target.blur();
+        }
       }
     },
     beforeMount () {
@@ -70,7 +83,7 @@
           }
         }
       } else {
-        this.userList = this.users;
+        this.userList = this.users.slice();
       }
     }
   };
@@ -81,8 +94,8 @@
   {
     width: 100%;
     height: rem-calc(102);
-    box-shadow: 0 1px 10px 0 rgba(0,44,92,0.28);
-    border-radius: 4px;
+    box-shadow: 0 rem-calc(1) rem-calc(10) 0 rgba(0,44,92,0.28);
+    border-radius: rem-calc(4);
     overflow-y: auto;
     padding-top: rem-calc(5);
     padding-bottom: rem-calc(5);
@@ -133,7 +146,42 @@
   {
     height: rem-calc(16);
     width: rem-calc(16);
-    margin-left: rem-calc(4);
     margin-right: rem-calc(8);
+  }
+
+  @include breakpoint(small only)
+  {
+    #user-input-container
+    {
+      margin-top: 0;
+    }
+
+    .participant-list-container
+    {
+      margin-top: rem-calc(10);
+    }
+
+    .participant-container
+    {
+      height: rem-calc(32);
+      width: 100%;
+    }
+
+    .participant-container:not(:last-child)
+    {
+      margin-right: 0;
+    }
+
+    .participant-text
+    {
+      font-size: rem-calc(15);
+    }
+
+    .participant-remove
+    {
+      height: rem-calc(16);
+      width: rem-calc(16);
+      margin-right: rem-calc(12);
+    }
   }
 </style>

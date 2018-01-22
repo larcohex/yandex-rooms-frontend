@@ -7,7 +7,7 @@
         </div>
         <div class="large-7 medium-2 hide-for-small-only cell"></div>
         <div class="large-2 medium-5 small-6 cell flex-container align-right">
-          <router-link to="/new" tag="button" class="text-button blue-button" v-if="$route.name !== 'NewEvent'">Создать встречу</router-link>
+          <router-link to="/new" tag="button" id="create-event-button" class="text-button blue-button" v-if="$route.name === 'Home'">Создать встречу</router-link>
         </div>
       </div>
     </div>
@@ -56,6 +56,13 @@
     {
       height: rem-calc(21);
       width: rem-calc(149);
+    }
+
+    #create-event-button
+    {
+      height: $text-button-height;
+      font-size: $paragraph-font-size;
+      padding: $text-button-padding;
     }
   }
 </style>

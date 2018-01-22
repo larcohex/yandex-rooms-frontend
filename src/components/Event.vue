@@ -1,28 +1,28 @@
 <template>
   <div>
-    <div class="grid-container flex-container align-center">
+    <div class="grid-container flex-container align-center show-for-medium">
       <div class="event-form-column-container">
-        <h2 class="new-event-heading">Новая встреча</h2>
+        <h2 class="new-event-heading">{{ newEvent ? 'Новая встреча' : 'Редактирование встречи' }}</h2>
         <div class="form-container">
           <label for="topic" class="form-label">Тема</label>
           <input type="text" name="topic" id="topic" class="form-input width-100" placeholder="О чем будете говорить?" v-model="event.title">
         </div>
-        <app-user-input @added="addUser" @removed="removeUser"></app-user-input>
+        <app-user-input @added="addUser" @removed="removeUser" @change="changeSelectedList"></app-user-input>
       </div>
       <div class="event-form-column-container">
         <div class="new-event-heading width-100 flex-container align-right align-middle">
           <router-link to="/" tag="div" class="icon-button close centered-background"></router-link>
         </div>
         <div class="form-container width-100 flex-container align-bottom">
-          <div class="inline-block float-left date-input float-left">
+          <div class="inline-block float-left">
             <label for="date" class="form-label">Дата</label>
             <input type="text" name="date" id="date" class="form-input pointer date-input" v-model="date" readonly>
           </div>
-          <div class="inline-block float-left time-input float-left">
+          <div class="inline-block float-left">
             <label for="start-time" class="form-label">Начало</label>
             <input type="text" name="start-time" id="start-time" class="form-input time-input" v-model="timeStart">
           </div>
-          <div id="dash-container" class="inline-flex-container align-center-middle float-left">
+          <div class="dash-container inline-flex-container align-center-middle float-left">
             <p class="bold no-margin">—</p>
           </div>
           <div class="inline-block float-left time-input">
@@ -33,25 +33,84 @@
         <div class="form-container width-100" v-if="room">
           <label class="form-label">Ваша переговорка</label>
           <div class="suggestion-container chosen-container width-100 flex-container align-justify align-middle">
-            <div><p class="inline-block bold suggestion-time-text no-margin">{{ room.timeStart }}—{{ room.timeEnd }}</p><p class="inline-block no-margin">{{ room.title }} · {{ room.floor }} этаж</p></div>
+            <div><p class="inline-block bold suggestion-time-text no-margin">{{ timeStart }}—{{ timeEnd }}</p><p class="inline-block no-margin">{{ room.title }} · {{ room.floor }} этаж</p></div>
+            <div class="cancel-suggestion-button centered-background" @click="cancelSuggestion()"></div>
+          </div>
+        </div>
+        <div class="form-container width-100" v-if="!room && recommendations.length">
+          <label class="form-label">Рекомендованные переговорки</label>
+          <div class="suggestion-container width-100 pointer" v-for="r in recommendations" @click="selectRoom(r)">
+            <p class="inline-block bold suggestion-time-text">{{ r.dateStart.format('HH:mm') }}—{{ r.dateEnd.format('HH:mm') }}</p><p class="inline-block">{{ r.title }} · {{ r.floor }} этаж</p>
+          </div>
+        </div>
+      </div>
+      <div id="event-controls-container" class="controls-container width-100 flex-container align-center-middle">
+        <router-link to="/" tag="button" class="text-button gray-button">Отмена</router-link>
+        <button class="text-button blue-button" v-if="newEvent" :disabled="!room" @click="moveEventsIfNeeded()">Создать встречу</button>
+        <template v-else>
+          <button class="text-button gray-button" @click="promptRemove()">Удалить встречу</button>
+          <button class="text-button gray-button" :disabled="!room" @click="updateEvent()">Сохранить</button>
+        </template>
+      </div>
+    </div>
+    <div id="event-form-container" class="show-for-small-only" :style="{ 'padding-bottom': ((!room && recommendations.length) ? '7.688rem' : '5rem') }">
+      <div class="event-form-column-container">
+        <h3 class="new-event-heading">{{ newEvent ? 'Новая встреча' : 'Редактирование встречи' }}</h3>
+        <div class="form-container width-100">
+          <label for="mobile-topic" class="form-label">Тема</label>
+          <input type="text" name="topic" id="mobile-topic" class="form-input width-100" placeholder="О чем будете говорить?" v-model="event.title">
+        </div>
+        <div class="form-container width-100">
+          <label for="mobile-date" class="form-label">Дата</label>
+          <input type="text" name="date" id="mobile-date" class="form-input pointer date-input" v-model="date" readonly>
+          <div class="grid-x">
+            <div class="auto cell">
+              <input type="text" name="start-time" class="form-input time-input" v-model="timeStart">
+            </div>
+            <div class="shrink cell">
+              <div class="dash-container inline-flex-container align-center-middle float-left">
+                <p class="bold no-margin">—</p>
+              </div>
+            </div>
+            <div class="auto cell">
+              <input type="text" name="end-time" class="form-input time-input" v-model="timeEnd">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="event-form-column-container">
+        <app-user-input @added="addUser" @removed="removeUser" @change="changeSelectedList"></app-user-input>
+      </div>
+      <div class="event-form-column-container" v-if="room || recommendations.length">
+        <div class="form-container width-100" v-if="room">
+          <label class="form-label">Ваша переговорка</label>
+          <div class="suggestion-container chosen-container width-100 flex-container align-justify align-middle">
+            <div><p class="inline-block bold suggestion-time-text no-margin">{{ timeStart }}—{{ timeEnd }}</p><p class="inline-block no-margin">{{ room.title }} · {{ room.floor }} этаж</p></div>
             <div class="cancel-suggestion-button centered-background" @click="cancelSuggestion()"></div>
           </div>
         </div>
         <div class="form-container width-100" v-else>
           <label class="form-label">Рекомендованные переговорки</label>
-          <div class="suggestion-container width-100" v-for="n in 3">
-            <p class="inline-block bold suggestion-time-text">16:00—16:30</p><p class="inline-block">Готем · 4 этаж</p>
+          <div class="suggestion-container width-100" v-for="r in recommendations" @click="selectRoom(r)">
+            <p class="inline-block bold suggestion-time-text">{{ r.dateStart.format('HH:mm') }}—{{ r.dateEnd.format('HH:mm') }}</p><p class="inline-block">{{ r.title }} · {{ r.floor }} этаж</p>
           </div>
         </div>
       </div>
-    </div>
-    <div id="event-controls-container" class="controls-container width-100 flex-container align-center-middle">
-      <router-link to="/" tag="button" class="text-button gray-button">Отмена</router-link>
-      <button class="text-button blue-button" v-if="newEvent" @click="createEvent()">Создать встречу</button>
-      <template v-else>
-        <button class="text-button gray-button" @click="promptRemove()">Удалить встречу</button>
-        <button class="text-button gray-button" @click="updateEvent()">Сохранить</button>
-      </template>
+      <div id="remove-container" class="event-form-column-container flex-container align-center-middle" v-if="!newEvent" @click="promptRemove()">
+        <button>Удалить встречу</button>
+      </div>
+      <div id="choose-rec-message-container" class="position-fixed flex-container align-middle width-100" v-if="!room && recommendations.length">
+        <h4 class="no-margin">Выберите переговорку</h4>
+      </div>
+      <div id="mobile-event-controls-container" class="event-form-column-container position-fixed">
+        <div class="flex-container align-center-middle width-100" v-if="newEvent">
+          <button class="text-button blue-button" :disabled="!room" @click="moveEventsIfNeeded()">Создать встречу</button>
+        </div>
+        <div class="controls-container width-100 flex-container align-right" v-else>
+          <router-link to="/" tag="button" class="text-button gray-button">Отмена</router-link>
+          <button class="text-button blue-button" :disabled="!room" @click="updateEvent()">Сохранить</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -83,14 +142,34 @@
           added: [],
           removed: []
         },
+        selectedList: [],
         room: null,
-        roomChange: true
+        recommendations: []
       };
     },
+    watch: {
+      timeStart () {
+        this.getRecommendation();
+      },
+      timeEnd () {
+        this.getRecommendation();
+      },
+      date () {
+        this.getRecommendation();
+      },
+      selectedList (newList) {
+        if (!this.room || this.room.capacity < newList.length) {
+          this.getRecommendation();
+        }
+      }
+    },
     methods: {
+      changeSelectedList (newList) {
+        this.selectedList = newList;
+      },
       cancelSuggestion () {
         this.room = null;
-        this.roomChange = true;
+        this.getRecommendation();
       },
       promptRemove () {
         this.$store.dispatch('openModal', {
@@ -114,29 +193,66 @@
         if (i === -1) this.users.removed.push(user);
         else this.users.added.splice(i, 1);
       },
+      checkRecommendationData () {
+        return !!(this.selectedList.length && this.date && moment(this.timeStart, 'HH:mm', true).isValid() && moment(this.timeEnd, 'HH:mm', true).isValid() && moment(this.date, 'D MMMM, YYYY').hour(moment(this.timeStart, 'HH:mm').hour()).minute(moment(this.timeStart, 'HH:mm').minute()).isSameOrAfter(moment(), 'minute') && moment(this.timeStart, 'HH:mm').isBefore(moment(this.timeEnd, 'HH:mm'), 'minute'));
+      },
+      getRecommendation () {
+        if (this.checkRecommendationData()) {
+          let body = {
+            members: this.selectedList.map((user) => user.id)
+          };
+          let timeStart = moment(this.timeStart, 'HH:mm');
+          let timeEnd = moment(this.timeEnd, 'HH:mm');
+          body.dateStart = moment(this.date, 'D MMMM, YYYY').hour(timeStart.hour()).minute(timeStart.minute()).toISOString();
+          body.dateEnd = moment(this.date, 'D MMMM, YYYY').hour(timeEnd.hour()).minute(timeEnd.minute()).toISOString();
+          if (this.event.hasOwnProperty('id')) {
+            body.id = this.event.id;
+          }
+          request.getRecommendation(body).then((recommendations) => {
+            if (recommendations instanceof Array) {
+              this.room = null;
+              this.recommendations = recommendations.map((r) => {
+                r.dateStart = moment(r.dateStart);
+                r.dateEnd = moment(r.dateEnd);
+                return r;
+              });
+            } else if (recommendations) {
+              this.recommendations = [recommendations];
+              if (recommendations.hasOwnProperty('newStart')) {
+                this.recommendations[0].dateStart = moment(recommendations.newStart);
+                this.recommendations[0].dateEnd = moment(recommendations.newEnd);
+              } else {
+                this.recommendations[0].dateStart = moment(this.date, 'D MMMM, YYYY').hour(timeStart.hour()).minute(timeStart.minute());
+                this.recommendations[0].dateEnd = moment(this.date, 'D MMMM, YYYY').hour(timeEnd.hour()).minute(timeEnd.minute());
+              }
+            }
+          });
+        }
+      },
+      selectRoom (room) {
+        this.room = room;
+        this.timeStart = room.dateStart.format('HH:mm');
+        this.timeEnd = room.dateEnd.format('HH:mm');
+      },
       updateEvent () {
         if (this.room) {
           let body = {};
           body.title = this.event.title;
-          if (this.roomChange) {
-            let timeStart = moment(this.timeStart, 'HH:mm');
-            let timeEnd = moment(this.timeEnd, 'HH:mm');
-            body.dateStart = moment(this.date, 'D MMMM, YYYY').hour(timeStart.hour()).minute(timeStart.minute()).toISOString();
-            body.dateEnd = moment(this.date, 'D MMMM, YYYY').hour(timeEnd.hour()).minute(timeEnd.minute()).toISOString();
-          }
+          body.dateStart = this.room.dateStart.toISOString();
+          body.dateEnd = this.room.dateEnd.toISOString();
           request.updateEvent(this.event.id, body).then(() => {
-            if (this.roomChange) {
+            if (this.room.id !== this.event.room.id) {
               request.changeEventRoom(this.event.id, this.room.id).then(() => {
-                let chain = Promise.resolve();
+                let promises = [];
                 for (let i = 0; i < this.users.added.length; ++i) {
-                  chain = chain.then(() => request.addUserToEvent(this.event.id, this.users.added[i].id));
+                  promises.push(request.addUserToEvent(this.event.id, this.users.added[i].id));
                 }
-                chain.then(() => {
-                  let chain2 = Promise.resolve();
+                Promise.all(promises).then(() => {
+                  let promises2 = [];
                   for (let i = 0; i < this.users.added.length; ++i) {
-                    chain2 = chain2.then(() => request.removeUserFromEvent(this.event.id, this.users.removed[i].id));
+                    promises2.push(request.removeUserFromEvent(this.event.id, this.users.removed[i].id));
                   }
-                  chain2.then(() => {
+                  Promise.all(promises2).then(() => {
                     // TODO: update only event
                     this.$store.dispatch('initFloors').then(() => {
                       this.$router.push('/');
@@ -144,24 +260,40 @@
                   });
                 });
               });
+            } else {
+              this.$store.dispatch('initFloors').then(() => {
+                this.$router.push('/');
+              });
             }
           });
         }
       },
-      createEvent () {
+      moveEventsIfNeeded () {
         if (this.room) {
-          let users = this.users.added.map((user) => user.id);
-          request.createEvent(this.event.title, this.event.dateStart, this.event.dateEnd, users, this.room.id).then(() => {
-            this.$store.dispatch('openModal', {
-              type: 'SUCCESS',
-              heading: 'Встреча создана!',
-              text: [`${moment(this.date, 'D MMMM, YYYY').format('D MMMM')}, ${this.timeStart}—${this.timeEnd}`, `${this.room.title} · ${this.room.floor}`]
+          if (this.room.hasOwnProperty('newRoom')) {
+            let promises = [];
+            for (let i = 0; i < this.room.clashingEvents.length; ++i) {
+              promises.push(request.changeEventRoom(this.room.clashingEvents[i].id, this.room.newRoom.id));
+            }
+            Promise.all(promises).then(() => {
+              this.createEvent();
             });
-            this.$store.dispatch('initFloors').then(() => {
-              this.$router.push('/');
-            });
-          });
+          } else this.createEvent();
         }
+      },
+      createEvent () {
+        let users = this.users.added.map((user) => user.id);
+        request.createEvent(this.event.title, this.room.dateStart.toISOString(), this.room.dateEnd.toISOString(), JSON.stringify(users), this.room.id).then(() => {
+          this.$store.dispatch('openModal', {
+            type: 'SUCCESS',
+            heading: 'Встреча создана!',
+            text: [`${moment(this.date, 'D MMMM, YYYY').format('D MMMM')}, ${this.timeStart}—${this.timeEnd}`, `${this.room.title} · ${this.room.floor} этаж`]
+          });
+          // TODO: update only event
+          this.$store.dispatch('initFloors').then(() => {
+            this.$router.push('/');
+          });
+        });
       }
     },
     beforeMount () {
@@ -174,18 +306,42 @@
         this.timeStart = this.event.dateStart.format('HH:mm');
         this.timeEnd = this.event.dateEnd.format('HH:mm');
         this.room = this.event.room;
-        this.room.timeStart = this.timeStart;
-        this.room.timeEnd = this.timeEnd;
+        this.room.dateStart = this.event.dateStart;
+        this.room.dateEnd = this.event.dateEnd;
+      } else {
+        if (this.$route.query.hasOwnProperty('timeStart') && this.$route.query.hasOwnProperty('timeStart') && this.$route.query.hasOwnProperty('room')) {
+          let start = moment(this.$route.query.timeStart);
+          let end = moment(this.$route.query.timeEnd);
+          this.date = start.format('D MMMM, YYYY');
+          this.timeStart = start.format('HH:mm');
+          this.timeEnd = end.format('HH:mm');
+          this.room = this.$store.getters.getRoomById(this.$route.query.room);
+          this.room.dateStart = start;
+          this.room.dateEnd = end;
+        }
       }
     },
     mounted () {
       let date = $('#date');
+      let mobileDate = $('#mobile-date');
       date.datepicker({
         showOtherMonths: true,
+        minDate: new Date(),
         onSelect: () => {
           this.date = moment(date.datepicker('getDate')).format('D MMMM, YYYY');
         }
       });
+      mobileDate.datepicker({
+        showOtherMonths: true,
+        minDate: new Date(),
+        onSelect: () => {
+          this.date = moment(mobileDate.datepicker('getDate')).format('D MMMM, YYYY');
+        }
+      });
+    },
+    beforeDestroy () {
+      $('#date').datepicker('destroy');
+      $('#mobile-date').datepicker('destroy');
     }
   };
 </script>
@@ -207,11 +363,7 @@
   {
     width: rem-calc(238);
     margin-right: rem-calc(16);
-  }
-
-  #date
-  {
-    background: $calendar no-repeat scroll rem-calc(214) center;
+    background: $calendar no-repeat rem-calc(214) center;
     padding-right: rem-calc(24);
   }
 
@@ -220,7 +372,7 @@
     width: rem-calc(72);
   }
 
-  #dash-container
+  .dash-container
   {
     height: $form-input-height;
     width: rem-calc(14);
@@ -260,5 +412,88 @@
     position: absolute;
     height: rem-calc(76);
     bottom: 0;
+  }
+
+  @include breakpoint(small only)
+  {
+    #event-form-container
+    {
+      background-color: $light-gray;
+    }
+
+    .event-form-column-container
+    {
+      width: 100%;
+      background-color: $white;
+      padding: rem-calc(16) rem-calc(16) rem-calc(20);
+      margin-top: rem-calc(8);
+      margin-left: 0;
+      margin-right: 0;
+
+      &:first-child
+      {
+        margin-top: 0;
+      }
+    }
+
+    .new-event-heading
+    {
+      margin-top: rem-calc(8);
+      margin-bottom: 0;
+    }
+
+    .date-input
+    {
+      margin-right: 0;
+      width: 100%;
+      background-position-x: 95%;
+    }
+
+    .time-input
+    {
+      width: 100%;
+      margin-top: rem-calc(8);
+    }
+
+    .dash-container
+    {
+      height: rem-calc(44);
+      margin-top: rem-calc(8);
+    }
+
+    .event-form-column-container > .form-container:first-child
+    {
+      margin-top: 0;
+    }
+
+    #remove-container
+    {
+      height: rem-calc(54);
+      margin-bottom: rem-calc(8);
+
+      & button
+      {
+        background: none;
+        width: 100%;
+        height: 100%;
+        border: none;
+        color: #ff3333;
+      }
+    }
+
+    #choose-rec-message-container
+    {
+      padding-left: rem-calc(16);
+      height: rem-calc(43);
+      color: $white;
+      bottom: rem-calc(80);
+      background-color: rgba(0, 16, 33, 0.80);
+    }
+
+    #mobile-event-controls-container
+    {
+      bottom: 0;
+      margin-top: 0;
+    }
   }
 </style>

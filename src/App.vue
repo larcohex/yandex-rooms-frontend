@@ -224,6 +224,7 @@
   .gray-button
   {
     background-color: $light-gray;
+    color: $black;
 
     &:hover
     {
@@ -310,8 +311,8 @@
 
   .form-input
   {
-    border: 2px solid $light-gray;
-    border-radius: 4px;
+    border: rem-calc(2) solid $light-gray;
+    border-radius: rem-calc(4);
     height: $form-input-height;
     line-height: $form-input-height;
     margin-top: rem-calc(4);
@@ -319,6 +320,8 @@
     padding-right: rem-calc(10);
     letter-spacing: rem-calc(0.47);
     font-size: $paragraph-font-size;
+    background-color: $white;
+    color: $black;
 
     @mixin placeholder-style
     {
@@ -375,12 +378,7 @@
     z-index: 10;
   }
 
-  .fade-enter-active
-  {
-    transition: opacity .25s;
-  }
-
-  .fade-leave-active
+  .fade-enter-active, .fade-leave-active
   {
     transition: opacity .25s;
   }
@@ -396,6 +394,11 @@
     {
       overflow-x: scroll;
     }
+
+    .medium-inline-flex-container
+    {
+      display: inline-flex;
+    }
   }
 
   @include breakpoint(small only)
@@ -405,9 +408,63 @@
       overflow-x: scroll;
     }
 
+    .small-only-flex-container
+    {
+      display: flex;
+    }
+
+    .text-button
+    {
+      height: rem-calc(44);
+      font-size: rem-calc(15);
+      padding: 0 rem-calc(24);
+    }
+
     .overlay-container
     {
       background-color: rgba(0, 16, 33, 0.80);
+    }
+
+    .form-container
+    {
+      margin-top: rem-calc(16);
+      margin-bottom: 0;
+    }
+
+    .form-label
+    {
+      font-size: rem-calc(13);
+    }
+
+    .form-input
+    {
+      height: rem-calc(44);
+      font-size: rem-calc(15);
+
+      &::-webkit-input-placeholder {
+        font-size: rem-calc(15);
+      }
+      &::-moz-placeholder {
+        font-size: rem-calc(15);
+      }
+      &:-ms-input-placeholder {
+        font-size: rem-calc(15);
+      }
+      &:-moz-placeholder {
+        font-size: rem-calc(15);
+      }
+    }
+
+    .avatar-container
+    {
+      height: rem-calc(32);
+      width: rem-calc(32);
+    }
+
+    .ui-datepicker
+    {
+      z-index: 14 !important;
+      font-size: rem-calc(20);
     }
   }
 </style>

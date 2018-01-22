@@ -4,7 +4,7 @@
     <div id="date-control-container-mobile" class="flex-container align-justify align-middle width-100 position-relative show-for-small-only shadow-border-bottom">
       <div class="icon-button chevron-left centered-background" @click="prevDay()"></div>
       <div id="date-container-mobile" class="date-container dashboard-header-elem no-outline pointer flex-container align-center-middle" tabindex="0" @focus="openCalendar()" @blur="closeCalendar()">
-        <h4 class="date-text no-margin">{{ now.format('D MMM') }}</h4>
+        <h4 class="date-text no-margin">{{ now.format('D MMM') }} · {{ dayDifference() }}</h4>
       </div>
       <div class="icon-button chevron-right centered-background" @click="nextDay()"></div>
       <div class="calendar-container position-absolute flex-container align-center-middle" v-show="calendar">
@@ -26,10 +26,10 @@
       <div id="dashboard-container" class="grid-container flex-container position-relative">
         <div id="shadow-bottom-container" class="dashboard-header-elem show-for-medium shadow-border-bottom"></div>
         <div id="left-column" class="shadow-border-right">
-          <div class="dashboard-header-elem flex-container align-justify align-middle width-100 position-relative hide-for-small-only">
+          <div id="date-control-container-desktop" class="dashboard-header-elem flex-container align-justify align-middle width-100 position-relative hide-for-small-only">
             <div class="icon-button chevron-left centered-background" @click="prevDay()"></div>
             <div id="date-container-desktop" class="date-container dashboard-header-elem no-outline pointer flex-container align-center-middle" tabindex="0" @focus="openCalendar()" @blur="closeCalendar()">
-              <h4 class="date-text no-margin">{{ now.format('D MMM') }}</h4>
+              <h4 class="date-text no-margin">{{ now.format('D MMM') }} · {{ dayDifference() }}</h4>
             </div>
             <div class="icon-button chevron-right centered-background" @click="nextDay()"></div>
             <div class="calendar-container position-absolute flex-container align-center-middle" v-show="calendar">
@@ -47,20 +47,18 @@
           </div>
         </div>
         <div id="right-column" class="medium-horizontal-scroll nowrap">
-          <!---->
           <transition name="fade">
             <div id="compact-room-name-list-container" class="show-for-small-only position-absolute" v-show="mobileRooms" key="compact">
               <div class="floor-container" v-for="(value, key) in floors">
                 <h6 class="floor-text medium-gray">{{ key }} ЭТАЖ</h6>
                 <div class="room-container" v-for="room in value">
-                  <div class="compact-room-name-container flex-container align-center-middle" :class="{ 'medium-gray': now.isBefore(moment(), 'day') || checkBusy(room.events) }">
+                  <div class="compact-room-name-container inline-flex-container align-center-middle" :class="{ 'medium-gray': now.isBefore(moment(), 'day') || checkBusy(room.events) }">
                     <h6 class="no-margin">{{ room.title }}</h6>
                   </div>
                 </div>
               </div>
             </div>
           </transition>
-          <!---->
           <div class="times-container dashboard-header-elem nowrap position-relative hide-for-small-only">
             <div class="header-line time-line-container" :style="{ left: (0.0667 * (now.hour() * 60 + now.minute()) - 0.03125) + 'rem' }" v-if="moment().isSame(now, 'day')"></div>
             <div class="current-time-container flex-container align-center-middle" :style="{ left: (0.0667 * (now.hour() * 60 + now.minute()) - 1.5) + 'rem' }" v-if="moment().isSame(now, 'day')">
@@ -87,10 +85,11 @@
                   <div class="room-data-padding-container">
                     <div class="table-cell-container height-100 inline-block without-data" v-for="n in 24"></div>
                   </div>
-                  <div class="room-row-container position-relative width-100">
-                    <div class="busy-container data-container event-container position-absolute" v-for="event in room.events" :style="{ width: (4 / 60 * event.dateEnd.diff(event.dateStart, 'minutes')) + 'rem', left: (4 * event.dateStart.hour() + 4 / 60 * event.dateStart.minute()) + 'rem' }" @focus="selectEvent(event.id)" @blur="unselectEvent()" tabindex="0" v-if="event.dateStart.isSame(now, 'day')" :class="'busy-event-' + room.id">
+                  <div class="room-row-container width-100">
+                    <div class="busy-container event-container height-100 position-absolute" v-for="event in room.events" :style="{ width: (4 / 60 * event.dateEnd.diff(event.dateStart, 'minutes')) + 'rem', left: (4 * event.dateStart.hour() + 4 / 60 * event.dateStart.minute()) + 'rem' }" @focus="selectEvent(event.id)" @blur="unselectEvent()" tabindex="0" v-if="event.dateStart.isSame(now, 'day')" :class="'busy-event-' + room.id">
                     </div>
                     <div class="event-info-container position-absolute" v-for="event in room.events" v-show="event.id === selectedEvent" :style="{ left: (4 * event.dateStart.hour() + 4 / 60 * event.dateStart.minute() - (21.125 - (4 / 60 * event.dateEnd.diff(event.dateStart, 'minutes'))) / 2) + 'rem' }" v-if="event.dateStart.isSame(now, 'day')">
+                      <div class="event-info-container-arrow"></div>
                       <div class="edit-button icon-button pen centered-background position-absolute" @mousedown="editEvent(event.id)"></div>
                       <h4 class="event-info-heading">{{ event.title }}</h4>
                       <p class="event-info-text">{{ event.dateStart.format('D MMMM') }}, {{ event.dateStart.format('HH:mm') }}—{{ event.dateEnd.format('HH:mm') }} · {{ room.title }}</p>
@@ -100,9 +99,11 @@
                       </div>
                       <p v-else>Нет участников</p>
                     </div>
-                    <div class="table-cell-container data-container inline-block" v-for="n in 24" @mouseover="mouseoverRoom(room.id, n)" @mouseleave="mouseleaveRoom(room.id)">
-                      <router-link :to="{ path: '/new', query: { timeStart: n - 1 } }" tag="button" class="add-button" v-if="now.clone().hour(n).minute(0).isSameOrAfter(moment(), 'minute')">+</router-link>
+                    <div class="height-100" @mouseleave="mouseleaveRoom(room.id)" @mousemove="showButton($event, room.id)">
+                      <div class="table-cell-container data-container inline-block" v-for="n in 24" @click="goToNewEvent(room, $event)"></div>
                     </div>
+                    <div :id="'mobile-new-event-button-' + room.id" class="mobile-add-button position-absolute show-for-small-only"></div>
+                    <button :id="'new-event-button-' + room.id" class="add-button position-absolute show-for-medium">+</button>
                   </div>
                   <div class="room-data-padding-container hide-for-small-only">
                     <div class="table-cell-container height-100 inline-block without-data" v-for="n in 24"></div>
@@ -139,6 +140,36 @@
       };
     },
     methods: {
+      dayDifference () {
+        let dif = this.now.clone().startOf('day').diff(moment().startOf('day'), 'days');
+        switch (dif) {
+          case 0:
+            return 'Сегодня';
+          case 1:
+            return 'Завтра';
+          case 2:
+            return 'Послезавтра';
+          case -1:
+            return 'Вчера';
+          case -2:
+            return 'Позавчера';
+          default:
+            break;
+        }
+        let ending = '';
+        let lastTwo = Math.abs(dif) % 100;
+        if (lastTwo > 10 && lastTwo < 15) ending = 'дней';
+        if (!ending) {
+          let last = lastTwo % 10;
+          if (last === 1) ending = 'день';
+          else if (last > 1 && last < 5) ending = 'дня';
+          else ending = 'дней';
+        }
+        let result = Math.abs(dif) + ' ' + ending;
+        if (dif < 0) result += ' назад';
+        else result += ' спустя';
+        return result;
+      },
       nextDay () {
         this.now = moment(this.now).add(1, 'days');
       },
@@ -162,13 +193,88 @@
         this.calendar = false;
         this.overlay = false;
       },
-      mouseoverRoom (id, n) {
-        if (this.now.clone().hour(n).minute(0).isSameOrAfter(moment(), 'minute')) {
-          $(`#room-title-${id}`).addClass('room-title-text-hover');
-        }
-      },
       mouseleaveRoom (id) {
         $(`#room-title-${id}`).removeClass('room-title-text-hover');
+        $(`#new-event-button-${id}`).removeAttr('style');
+      },
+      showButton (event, id) {
+        let el = $(`#new-event-button-${id}`);
+        let right = $('#right-column');
+        let pos = Math.max((event.clientX - right.offset().left + right.scrollLeft()) / parseFloat($('html').css('font-size')) - 1.75, 0);
+        let minutes = Math.round((pos + 0.03125) / 0.0667);
+        let hours = Math.floor(minutes / 60);
+        minutes = minutes % 60;
+        let start = this.now.clone().hour(hours).minute(minutes);
+        if (start.isSameOrAfter(moment(), 'minute')) {
+          el.css({
+            display: 'block',
+            left: pos + 'rem'
+          });
+          $(`#room-title-${id}`).addClass('room-title-text-hover');
+        } else {
+          el.removeAttr('style');
+          el.css('left', 0);
+          $(`#room-title-${id}`).removeClass('room-title-text-hover');
+        }
+      },
+      goToNewEvent (room, event) {
+        let button = $(`#new-event-button-${room.id}`);
+        let findRange = (pos, room) => {
+          let minutes = Math.round((pos + 0.03125) / 0.0667);
+          let hours = Math.floor(minutes / 60);
+          minutes = minutes % 60;
+          let start = this.now.clone().hour(hours).minute(minutes);
+          if (start.isSameOrAfter(moment(), 'minute')) {
+            let end = start.clone().add(1, 'hours');
+            for (let i = 0; i < room.events.length; ++i) {
+              if (start.isBefore(moment(room.events[i].dateEnd), 'minute') && start.isAfter(moment(room.events[i].dateStart), 'minute')) {
+                start = moment(room.events[i].dateEnd);
+                if (i + 1 < room.events.length) {
+                  if (end.isAfter(moment(room.events[i + 1].dateStart)) && end.isBefore(moment(room.events[i + 1].dateEnd))) {
+                    end = moment(room.events[i + 1].dateStart);
+                  }
+                }
+              } else if (end.isAfter(moment(room.events[i].dateStart)) && end.isBefore(moment(room.events[i].dateEnd))) {
+                end = moment(room.events[i].dateStart);
+              }
+            }
+            return [start, end];
+          } else return null;
+        };
+        if (button[0].offsetParent === null) {
+          let el = $(`#mobile-new-event-button-${room.id}`);
+          let cont = $('.small-only-horizontal-scroll');
+          if (cont.css('overflow-x') === 'scroll') {
+            let pos = Math.max((cont.scrollLeft() + event.clientX - $('#right-column').width()) / parseFloat($('html').css('font-size')) - 1.75, 0);
+            let range = findRange(pos, room);
+            if (range) {
+              el.css({
+                display: 'block',
+                left: pos + 'rem'
+              });
+              this.$router.push({
+                path: '/new',
+                query: {
+                  room: room.id,
+                  timeStart: range[0].toISOString(),
+                  timeEnd: range[1].toISOString()
+                }
+              });
+            }
+          }
+        } else {
+          let pos = parseFloat(button.css('left')) / parseFloat($('html').css('font-size'));
+          let range = findRange(pos, room);
+          button.addClass('add-button-active');
+          this.$router.push({
+            path: '/new',
+            query: {
+              room: room.id,
+              timeStart: range[0].toISOString(),
+              timeEnd: range[1].toISOString()
+            }
+          });
+        }
       },
       checkBusy (events) {
         let start = -1;
@@ -251,6 +357,10 @@
         }
         $this.data('scrollTimeout', setTimeout(f, 250));
       });
+    },
+    beforeDestroy () {
+      $('#datepicker-desktop').datepicker('destroy');
+      $('#datepicker-mobile').datepicker('destroy');
     }
   };
 </script>
@@ -284,6 +394,11 @@
     width: rem-calc(1043);
   }
 
+  #date-control-container-desktop
+  {
+    z-index: 2;
+  }
+
   .date-container:focus .date-text
   {
     color: #0070e0;
@@ -292,7 +407,6 @@
   .date-container
   {
     position: relative;
-    z-index: 2;
   }
 
   .date-text
@@ -421,6 +535,11 @@
     height: rem-calc(8);
   }
 
+  .room-row-container
+  {
+    position: relative;
+  }
+
   .room-data-container
   {
     height: rem-calc(44);
@@ -429,10 +548,10 @@
   .table-cell-container
   {
     width: rem-calc(65);
-    border-right: 1px solid rgba(19, 100, 205, 0.10);
-    border-left: 1px solid rgba(19, 100, 205, 0.10);
+    border-right: rem-calc(1) solid rgba(19, 100, 205, 0.10);
+    border-left: rem-calc(1) solid rgba(19, 100, 205, 0.10);
     vertical-align: top;
-    margin: 0 -1px 0 0;
+    margin: 0 rem-calc(-1) 0 0;
     position: relative;
     z-index: 1;
   }
@@ -440,14 +559,9 @@
   .data-container
   {
     height: rem-calc(28);
-    border-top: 1px solid rgba(19, 100, 205, 0.10);
-    border-bottom: 1px solid rgba(19, 100, 205, 0.10);
+    border-top: rem-calc(1) solid rgba(19, 100, 205, 0.10);
+    border-bottom: rem-calc(1) solid rgba(19, 100, 205, 0.10);
     background-color: $white;
-  }
-
-  .busy-container
-  {
-    z-index: 2;
   }
 
   .room-data-padding-container
@@ -457,7 +571,6 @@
 
   .event-info-container
   {
-    height: rem-calc(112);
     width: rem-calc(338);
     top: rem-calc(20);
     z-index: 4;
@@ -466,7 +579,7 @@
     padding: rem-calc(8) rem-calc(8) rem-calc(16) rem-calc(16);
   }
 
-  .event-info-container:after
+  .event-info-container-arrow
   {
     bottom: 100%;
     left: 50%;
@@ -506,6 +619,7 @@
 
   .event-container
   {
+    z-index: 2;
     background-color: $busy-data-background-color-normal;
 
     &:hover
@@ -524,25 +638,19 @@
   {
     height: rem-calc(28);
     width: rem-calc(57);
-    opacity: 0;
+    display: none;
     color: #ffffff;
     font-family: $body-font-family;
     font-weight: bold;
+    background-color: $medium-blue;
+    z-index: 1;
+    pointer-events: none;
+    top: 0;
+  }
 
-    &:hover, &:active
-    {
-      opacity: 1;
-    }
-
-    &:hover
-    {
-      background-color: $medium-blue;
-    }
-
-    &:active
-    {
-      background-color: $dark-blue;
-    }
+  .add-button-active
+  {
+    background-color: $dark-blue;
   }
 
   @include breakpoint(small only)
@@ -559,10 +667,6 @@
       border-radius: 0 0 rem-calc(8) rem-calc(8);
       width: 100%;
       height: rem-calc(380);
-      & .ui-datepicker
-      {
-        font-size: rem-calc(20);
-      }
     }
 
     .datepicker-container
@@ -585,11 +689,6 @@
     #right-column
     {
       width: 50%;
-    }
-
-    .time-container
-    {
-      width: $time-container-width - rem-calc(1);
     }
 
     .current-time-container
@@ -623,7 +722,7 @@
     .table-cell-container
     {
       border-left: none;
-      margin-left: 0;
+      border-right-width: rem-calc(2);
     }
 
     .floor-text-data-container
@@ -641,16 +740,32 @@
       }
     }
 
-    .busy-container
-    {
-      height: rem-calc(58);
-    }
-
     .data-container
     {
       height: 100%;
-      border: none;
-      border-right: 1px solid rgba(19, 100, 205, 0.10);
+      border-top: none;
+      border-bottom: none;
+    }
+
+    .event-info-container
+    {
+      width: 200%;
+      top: rem-calc(29);
+    }
+
+    .event-info-heading
+    {
+      font-size: rem-calc(20);
+    }
+
+    .event-info-text, .participant-text
+    {
+      font-size: rem-calc(15);
+    }
+
+    .event-info-text
+    {
+      margin-top: rem-calc(8);
     }
 
     .room-row-container
@@ -706,6 +821,16 @@
       box-shadow: 0 rem-calc(1) rem-calc(8) 0 rgba(0,44,92,0.28);
       border-radius: rem-calc(4);
       letter-spacing: rem-calc(0.4);
+    }
+
+    .mobile-add-button
+    {
+      height: 100%;
+      width: rem-calc(57);
+      background-color: #005cff;
+      display: none;
+      z-index: 1;
+      top: 0;
     }
   }
 </style>

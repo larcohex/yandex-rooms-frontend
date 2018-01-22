@@ -17,6 +17,13 @@ module.exports = {
         pathRewrite: {
           '^/graphql': ''
         }
+      },
+      '/recommendation': {
+        target: 'http://localhost:3000/recommendation',
+        changeOrigin: true,
+        pathRewrite: {
+          '^/recommendation': ''
+        }
       }
     },
 
